@@ -1,0 +1,11 @@
+[[source]]
+url = "https://artifacts.dell.com/artifactory/api/pypi/python/simple"
+verify_ssl = true
+name = "pip_conf_index_global"
+
+[packages]
+
+[dev-packages]
+
+[requires]
+python_version = "3.13"

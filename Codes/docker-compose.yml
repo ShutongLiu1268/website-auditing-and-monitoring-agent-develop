@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017
+      - MONGODB_DB_NAME=npl_pdp_audit
+      - MONGODB_COLLECTION_PREFIX=${MONGODB_COLLECTION_PREFIX:-pdp}
+      - DSX_API_KEY=${DSX_API_KEY:-}
+      - DSX_BASE_URL=${DSX_BASE_URL:-}
+      - DSX_CLIENT_ID=${DSX_CLIENT_ID:-}
+      - DSX_CLIENT_SECRET=${DSX_CLIENT_SECRET:-}
+      - DSX_AUTH_METHOD=${DSX_AUTH_METHOD:-client}
+      - DSX_MODEL=${DSX_MODEL:-gpt-oss-120b}
+      - DSX_VERIFY_TLS=${DSX_VERIFY_TLS:-true}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_USE_TLS=${SMTP_USE_TLS:-true}
+      - SMTP_FROM=${SMTP_FROM:-}
+      - SCHEDULER_ENABLED=${SCHEDULER_ENABLED:-false}
+      - SCHEDULER_POLL_SECONDS=${SCHEDULER_POLL_SECONDS:-30}
+      - SCHEDULER_TIMEZONE=${SCHEDULER_TIMEZONE:-UTC}
+      - DEMO_MODE=${DEMO_MODE:-true}
+      - CRAWL_MAX_CONCURRENT=${CRAWL_MAX_CONCURRENT:-2}
+      - CRAWL_SAME_HOST_DELAY_MS=${CRAWL_SAME_HOST_DELAY_MS:-2000}
+      - CRAWL_MAX_DEPTH=${CRAWL_MAX_DEPTH:-2}
+      - CRAWL_DEFAULT_PAGE_LIMIT=${CRAWL_DEFAULT_PAGE_LIMIT:-25}
+      - PLAYWRIGHT_TIMEOUT_MS=30000
+      - PLAYWRIGHT_MAX_CONCURRENT=2
+      - PLAYWRIGHT_SAME_HOST_DELAY_MS=2000
+      - DEBUG=true
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+
+  web:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+volumes:
+  mongodb_data:

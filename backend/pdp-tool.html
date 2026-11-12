@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dell PDP Audit & Comparison Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #0076ce;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f5f5f5;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+            border: none;
+            background: none;
+            font-size: 16px;
+        }
+
+        .tab:hover {
+            background: #e8e8e8;
+        }
+
+        .tab.active {
+            background: white;
+            color: #0076ce;
+            border-bottom: 2px solid #0076ce;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #0076ce;
+        }
+
+        .form-group input::placeholder {
+            color: #999;
+        }
+
+        .btn {
+            background: #0076ce;
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background: #005a9e;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 118, 206, 0.3);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .progress-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .progress-section.active {
+            display: block;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #0076ce;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .progress-text {
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+        }
+
+        .results-section {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .results-section.active {
+            display: block;
+        }
+
+        .result-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #0076ce;
+        }
+
+        .result-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .result-card p {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .result-card .label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .download-links {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e8f4fd;
+            border-radius: 8px;
+        }
+
+        .download-links h4 {
+            color: #0076ce;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .download-links a {
+            display: inline-block;
+            margin-right: 15px;
+            margin-bottom: 8px;
+            color: #0076ce;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .download-links a:hover {
+            text-decoration: underline;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .comparison-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .comparison-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .difference {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .help-text {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Dell PDP Audit & Comparison Tool</h1>
+            <p>Generate commands for auditing and comparing Dell Product Detail Pages</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('audit')">Audit</button>
+            <button class="tab" onclick="switchTab('compare')">Compare</button>
+        </div>
+
+        <div class="content">
+            <!-- Audit Tab -->
+            <div id="audit-tab" class="tab-content active">
+                <div class="form-group">
+                    <label for="audit-url">PDP URL *</label>
+                    <input
+                        type="url"
+                        id="audit-url"
+                        placeholder="https://www.dell.com/en-us/shop/laptop-computers/spd/xps13dx13260"
+                    >
+                    <p class="help-text">Enter the full URL of the Dell PDP you want to audit</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="audit-type">Audit Type</label>
+                    <select id="audit-type">
+                        <option value="R2">R2 Review (Global English)</option>
+                        <option value="R3">R3 Review (Regional)</option>
+                        <option value="Sprints">Sprints/Launch</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="audit-region">Region</label>
+                    <select id="audit-region">
+                        <option value="US">United States (en-us)</option>
+                        <option value="CA">Canada (en-ca)</option>
+                        <option value="UK">United Kingdom (en-gb)</option>
+                        <option value="FR">France (fr-fr)</option>
+                        <option value="DE">Germany (de-de)</option>
+                        <option value="JP">Japan (ja-jp)</option>
+                        <option value="CN">China (zh-cn)</option>
+                        <option value="AU">Australia (en-au)</option>
+                        <option value="IN">India (en-in)</option>
+                    </select>
+                </div>
+
+                <button class="btn" onclick="runAudit()">📋 Generate Command</button>
+
+                <div class="result-card" style="margin-top: 20px;">
+                    <h3>📝 How to Use</h3>
+                    <p>1. Click "Generate Command" above</p>
+                    <p>2. The command will be copied to your clipboard</p>
+                    <p>3. Open a terminal in the backend folder</p>
+                    <p>4. Paste and run the command</p>
+                    <p>5. Results will be saved in the backend folder</p>
+                </div>
+            </div>
+
+            <!-- Compare Tab -->
+            <div id="compare-tab" class="tab-content">
+                <div class="form-group">
+                    <label for="compare-url1">First URL *</label>
+                    <input
+                        type="url"
+                        id="compare-url1"
+                        placeholder="https://www.dell.com/en-ca/shop/laptop-computers/spd/xps13dx13260"
+                    >
+                    <p class="help-text">Enter the first PDP URL (e.g., Canada version)</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="compare-url2">Second URL *</label>
+                    <input
+                        type="url"
+                        id="compare-url2"
+                        placeholder="https://www.dell.com/en-us/shop/laptop-computers/spd/xps13dx13260"
+                    >
+                    <p class="help-text">Enter the second PDP URL (e.g., USA version)</p>
+                </div>
+
+                <button class="btn" onclick="runComparison()">📋 Generate Command</button>
+
+                <div class="result-card" style="margin-top: 20px;">
+                    <h3>📝 How to Use</h3>
+                    <p>1. Click "Generate Command" above</p>
+                    <p>2. The command will be copied to your clipboard</p>
+                    <p>3. Open a terminal in the backend folder</p>
+                    <p>4. Paste and run the command</p>
+                    <p>5. Results will be saved in the backend folder</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tab) {
+            // Hide all tabs
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            // Show selected tab
+            event.target.classList.add('active');
+            document.getElementById(tab + '-tab').classList.add('active');
+        }
+
+        function updateProgress(elementId, textId, percent, text) {
+            document.getElementById(elementId).style.width = percent + '%';
+            document.getElementById(textId).textContent = text;
+        }
+
+        function showProgress(type) {
+            document.getElementById(type + '-progress').classList.add('active');
+            document.getElementById(type + '-results').classList.remove('active');
+        }
+
+        function showResults(type) {
+            document.getElementById(type + '-progress').classList.remove('active');
+            document.getElementById(type + '-results').classList.add('active');
+        }
+
+        function runAudit() {
+            const url = document.getElementById('audit-url').value;
+            const auditType = document.getElementById('audit-type').value;
+            const region = document.getElementById('audit-region').value;
+
+            if (!url) {
+                alert('Please enter a URL');
+                return;
+            }
+
+            // Generate the command
+            const command = `.venv\\Scripts\\python.exe unified_tool.py audit "${url}" ${auditType} ${region}`;
+
+            // Copy command to clipboard
+            navigator.clipboard.writeText(command).then(() => {
+                alert('Command copied to clipboard!\n\nPaste it in the backend folder terminal to run the audit.');
+            }).catch(() => {
+                alert('Command:\n\n' + command + '\n\nCopy and run this in the backend folder terminal.');
+            });
+        }
+
+        function runComparison() {
+            const url1 = document.getElementById('compare-url1').value;
+            const url2 = document.getElementById('compare-url2').value;
+
+            if (!url1 || !url2) {
+                alert('Please enter both URLs');
+                return;
+            }
+
+            // Generate the command
+            const command = `.venv\\Scripts\\python.exe unified_tool.py compare "${url1}" "${url2}"`;
+
+            // Copy command to clipboard
+            navigator.clipboard.writeText(command).then(() => {
+                alert('Command copied to clipboard!\n\nPaste it in the backend folder terminal to run the comparison.');
+            }).catch(() => {
+                alert('Command:\n\n' + command + '\n\nCopy and run this in the backend folder terminal.');
+            });
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+    </script>
+</body>
+</html>

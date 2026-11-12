@@ -1,0 +1,60 @@
+[project]
+name = "npl-pdp-audit"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.23.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "motor>=3.3.0",
+    "playwright>=1.40.0",
+    "openai>=1.0.0",
+    "python-multipart>=0.0.6",
+    "csoutils[ai]==2.1.2",
+    "aiosmtplib>=3.0.2",
+    "tzdata>=2025.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-mock>=3.14.0",
+    "ruff>=0.1.0",
+    "basedpyright>=1.12.0",
+    "httpx>=0.25.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[[tool.uv.index]]
+default = true
+name = "pypi"
+url = "https://artifacts.dell.com/artifactory/api/pypi/python/simple"
+
+[[tool.uv.index]]
+name = "cqa"
+url = "https://artifacts.dell.com/artifactory/api/pypi/cds-1001541-pypi-dev-local/simple"
+
+[tool.uv]
+system-certs = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.basedpyright]
+pythonVersion = "3.12"

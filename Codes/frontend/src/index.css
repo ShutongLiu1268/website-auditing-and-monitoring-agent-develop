@@ -1,0 +1,53 @@
+@import '@dds/react/css/dds-styles.css';
+@import '@dds/react/css/dds-fonts.css';
+
+@font-face {
+  font-family: "dds-icons";
+  font-style: normal;
+  font-weight: normal;
+  src: url("@dds/react/icons/dds-icons.woff2") format("woff2"),
+    url("@dds/react/icons/dds-icons.woff") format("woff");
+}
+
+:root {
+  font-family: var(--dds-font-family-base);
+  color: var(--dds-color-text-primary);
+  background: var(--dds-color-background-surface-secondary);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  background: var(--dds-color-background-surface-secondary);
+}
+
+body {
+  min-width: 320px;
+  min-height: 100svh;
+  margin: 0;
+  font-family: var(--dds-font-family-base);
+}
+
+button,
+textarea,
+select {
+  font: inherit;
+}
+
+button:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: var(--dds-size-2) solid var(--dds-color-border-focus-ring1);
+  outline-offset: var(--dds-size-2);
+}
+
+#root {
+  min-height: 100svh;
+}
