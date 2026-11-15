@@ -29,6 +29,12 @@ from playwright.async_api import async_playwright
 from datetime import datetime
 
 SCRIPT_DIR = Path(__file__).parent
+SCREENSHOTS_DIR = SCRIPT_DIR / "screenshots"
+REPORTS_DIR = SCRIPT_DIR / "reports"
+
+# Create folders if they don't exist
+SCREENSHOTS_DIR.mkdir(exist_ok=True)
+REPORTS_DIR.mkdir(exist_ok=True)
 
 
 class UniversalAnalyzerV2:
@@ -40,10 +46,10 @@ class UniversalAnalyzerV2:
         self.text_content = None
         self.results = []
         
-    async def capture_screenshot(self):
-        """Take full-page screenshot."""
+    async def capture_screenshot_and_text(self):
+        """Take full-page screenshot and extract text in one pass."""
         print("\n" + "="*60)
-        print("STEP 1: Capturing Screenshot")
+        print("STEP 1: Capturing Screenshot and Extracting Text")
         print("="*60)
         
         async with async_playwright() as p:
@@ -83,50 +89,24 @@ class UniversalAnalyzerV2:
             await page.evaluate("window.scrollTo(0, 0)")
             await asyncio.sleep(2)
             
-            # Generate filename
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"analysis_{timestamp}.png"
-            self.screenshot_path = SCRIPT_DIR / filename
+            # Generate descriptive filename from URL
+            url_parts = self.url.replace("https://", "").replace("http://", "").split("/")
+            page_name = url_parts[1] if len(url_parts) > 1 else "page"
+            date_str = datetime.now().strftime("%Y-%m-%d")
+            filename = f"{page_name}_{self.region}_{date_str}.png"
+            self.screenshot_path = SCREENSHOTS_DIR / filename
             
             print("Taking full-page screenshot...")
             await page.screenshot(path=str(self.screenshot_path), full_page=True, timeout=120000)
             print(f"[OK] Screenshot saved to: {self.screenshot_path}")
-            
-            await browser.close()
-    
-    async def extract_text(self):
-        """Extract full text content."""
-        print("\n" + "="*60)
-        print("STEP 2: Extracting Text Content")
-        print("="*60)
-        
-        async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=False)
-            context = await browser.new_context(viewport={'width': 1920, 'height': 1080})
-            page = await context.new_page()
-            
-            await page.goto(self.url, wait_until="commit", timeout=120000)
-            await asyncio.sleep(10)
-            
-            try:
-                await page.click('button:has-text("Accept")', timeout=5000)
-            except:
-                pass
-            
-            # Scroll to load content
-            scroll_count = 0
-            while scroll_count < 20:
-                await page.evaluate(f"window.scrollTo(0, {scroll_count * 1080})")
-                await asyncio.sleep(0.5)
-                scroll_count += 1
             
             print("Extracting full text...")
             self.text_content = await page.evaluate("document.body.innerText")
             print(f"[OK] Extracted {len(self.text_content)} characters")
             
             # Save text
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            text_file = SCRIPT_DIR / f"analysis_{timestamp}.txt"
+            text_filename = f"{page_name}_{self.region}_{date_str}.txt"
+            text_file = REPORTS_DIR / text_filename
             with open(text_file, 'w', encoding='utf-8') as f:
                 f.write(self.text_content)
             print(f"[OK] Text saved to: {text_file}")
@@ -639,9 +619,12 @@ class UniversalAnalyzerV2:
         
         report += f"\n**Total Issues:** {len(self.results)}\n"
         
-        # Save report
-        timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-        report_file = SCRIPT_DIR / f"analysis_report_{timestamp_str}.md"
+        # Save report with descriptive name
+        url_parts = self.url.replace("https://", "").replace("http://", "").split("/")
+        page_name = url_parts[1] if len(url_parts) > 1 else "page"
+        date_str = datetime.now().strftime("%Y-%m-%d")
+        report_filename = f"{page_name}_{self.region}_{self.audit_type}_{date_str}.md"
+        report_file = REPORTS_DIR / report_filename
         with open(report_file, 'w', encoding='utf-8') as f:
             f.write(report)
         
@@ -657,16 +640,13 @@ class UniversalAnalyzerV2:
         print(f"\nAudit Type: {self.audit_type.upper()}")
         print(f"Region: {self.region}")
         
-        # Step 1: Capture screenshot
-        await self.capture_screenshot()
+        # Step 1: Capture screenshot and extract text in one pass
+        await self.capture_screenshot_and_text()
         
-        # Step 2: Extract text
-        await self.extract_text()
-        
-        # Step 3: Run audit
+        # Step 2: Run audit
         self.run_audit()
         
-        # Step 4: Generate report
+        # Step 3: Generate report
         report = self.generate_report()
         
         print("\n" + "="*60)
@@ -674,9 +654,11 @@ class UniversalAnalyzerV2:
         print("="*60)
         print(f"\nResults generated:")
         print(f"- Screenshot: {self.screenshot_path}")
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        print(f"- Text file: {SCRIPT_DIR / f'analysis_{timestamp}.txt'}")
-        print(f"- Report: {SCRIPT_DIR / f'analysis_report_{timestamp}.md'}")
+        url_parts = self.url.replace("https://", "").replace("http://", "").split("/")
+        page_name = url_parts[1] if len(url_parts) > 1 else "page"
+        date_str = datetime.now().strftime("%Y-%m-%d")
+        print(f"- Text file: {REPORTS_DIR / f'{page_name}_{self.region}_{date_str}.txt'}")
+        print(f"- Report: {REPORTS_DIR / f'{page_name}_{self.region}_{self.audit_type}_{date_str}.md'}")
         
         return report
 

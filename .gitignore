@@ -52,3 +52,10 @@ frontend/.vite/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Analysis output files
+backend/screenshots/
+backend/reports/
+analysis_*.png
+analysis_*.txt
+analysis_report_*.md
