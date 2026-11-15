@@ -680,15 +680,16 @@ class UniversalAnalyzerV2:
 
 ## Analysis Results Table
 
-|| Original Problem | Severity | Issue | Suggested Fix |
-||------------------|----------|-------|---------------|
+|| Original Problem | Severity | Issue | Suggested Fix | Original Link |
+||------------------|----------|-------|---------------|---------------|
 """
         
         if not self.results:
-            report += "| No issues found | N/A | N/A | N/A |\n"
+            report += "| No issues found | N/A | N/A | N/A | N/A |\n"
         else:
             for result in self.results:
-                report += f"| {result['issue']} | {result['severity']} | {result['section']} | {result['correction']} |\n"
+                link = result['copy_paste'] if result.get('copy_paste', '').startswith('http') else self.url
+                report += f"| {result['issue']} | {result['severity']} | {result['section']} | {result['correction']} | {link} |\n"
         
         # Add summary
         report += "\n---\n\n## Summary\n\n"
