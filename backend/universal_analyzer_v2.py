@@ -680,15 +680,15 @@ class UniversalAnalyzerV2:
 
 ## Analysis Results Table
 
-|| Section | Line | The Problem | Suggested Correction | What to copy/paste into proof | Severity | Explanation |
-||---------|------|-------------|---------------------|--------------------------------|----------|-------------|
+|| Original Problem | Severity | Issue | Suggested Fix |
+||------------------|----------|-------|---------------|
 """
         
         if not self.results:
-            report += "| No issues found | N/A | N/A | N/A | N/A | N/A | N/A |\n"
+            report += "| No issues found | N/A | N/A | N/A |\n"
         else:
             for result in self.results:
-                report += f"| {result['section']} | {result['line']} | {result['issue']} | {result['correction']} | {result['copy_paste']} | {result['severity']} | {result['explanation']} |\n"
+                report += f"| {result['issue']} | {result['severity']} | {result['section']} | {result['correction']} |\n"
         
         # Add summary
         report += "\n---\n\n## Summary\n\n"
