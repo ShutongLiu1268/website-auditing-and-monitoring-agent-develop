@@ -70,7 +70,7 @@ async def capture_screenshot(url, output_filename):
         
         for selector in accordion_selectors:
             try:
-                elements = page.locator(selector).all()
+                elements = await page.locator(selector).all()
                 for element in elements:
                     try:
                         if await element.is_visible(timeout=1000):
@@ -124,7 +124,7 @@ async def capture_screenshot(url, output_filename):
         
         for selector in tab_selectors:
             try:
-                elements = page.locator(selector).all()
+                elements = await page.locator(selector).all()
                 for element in elements:
                     try:
                         if await element.is_visible(timeout=1000):
