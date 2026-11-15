@@ -15,6 +15,7 @@ Audit Types:
     - r3: R3 Review (Regional) - Sections 11-15
     - compare: Compare two pages
     - accessibility: WCAG and EAA accessibility checks
+    - links: Check for broken links
     - all: Run all audit types
 
 Example:
@@ -24,9 +25,11 @@ Example:
 import asyncio
 import sys
 import re
+import aiohttp
 from pathlib import Path
 from playwright.async_api import async_playwright
 from datetime import datetime
+from urllib.parse import urljoin, urlparse
 
 SCRIPT_DIR = Path(__file__).parent
 SCREENSHOTS_DIR = SCRIPT_DIR / "screenshots"
@@ -540,7 +543,87 @@ class UniversalAnalyzerV2:
         print(f"Found {len(issues)} accessibility issues")
         self.results.extend(issues)
     
-    def run_audit(self):
+    async def check_broken_links(self):
+        """Check for broken links on the page."""
+        print("\n" + "="*60)
+        print("BROKEN LINKS CHECK")
+        print("="*60)
+        
+        issues = []
+        
+        # Extract links from the page using Playwright
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            context = await browser.new_context()
+            page = await context.new_page()
+            
+            await page.goto(self.url, wait_until="commit", timeout=120000)
+            await asyncio.sleep(5)
+            
+            # Get all links
+            links = await page.eval_on_selector_all('a[href]', 'elements => elements.map(e => e.href)')
+            
+            await browser.close()
+        
+        if not links:
+            print("No links found on page")
+            return
+        
+        print(f"Found {len(links)} links, checking...")
+        
+        # Check each link
+        checked_count = 0
+        max_checks = 50  # Limit to avoid timeout
+        
+        for link in links[:max_checks]:
+            try:
+                # Skip javascript: and mailto: links
+                if link.startswith('javascript:') or link.startswith('mailto:') or link.startswith('#'):
+                    continue
+                
+                # Make absolute URL
+                absolute_url = urljoin(self.url, link)
+                
+                # Skip non-http links
+                if not absolute_url.startswith(('http://', 'https://')):
+                    continue
+                
+                # Check link status
+                async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
+                    try:
+                        async with session.head(absolute_url, allow_redirects=True) as response:
+                            if response.status >= 400:
+                                issues.append({
+                                    'section': 'Broken Links',
+                                    'line': 'N/A',
+                                    'issue': f'Broken link: {absolute_url}',
+                                    'correction': 'Fix or remove broken link',
+                                    'copy_paste': absolute_url,
+                                    'severity': 'High',
+                                    'explanation': f'HTTP {response.status} - Link returns error'
+                                })
+                    except Exception as e:
+                        issues.append({
+                            'section': 'Broken Links',
+                            'line': 'N/A',
+                            'issue': f'Broken link: {absolute_url}',
+                            'correction': 'Fix or remove broken link',
+                            'copy_paste': absolute_url,
+                            'severity': 'High',
+                            'explanation': f'Connection error: {str(e)}'
+                        })
+                
+                checked_count += 1
+                if checked_count % 10 == 0:
+                    print(f"   Checked {checked_count}/{min(len(links), max_checks)} links...")
+            
+            except Exception as e:
+                print(f"   Error checking link: {e}")
+        
+        print(f"Checked {checked_count} links, found {len(issues)} broken links")
+        self.results.extend(issues)
+    
+    async def run_audit(self):
         """Run the requested audit type."""
         print("\n" + "="*60)
         print(f"STEP 3: Running {self.audit_type.upper()} Audit")
@@ -564,6 +647,10 @@ class UniversalAnalyzerV2:
         if self.audit_type == "accessibility" or self.audit_type == "all":
             print("\n--- Running Accessibility (WCAG/EAA) Check ---")
             self.check_accessibility_wcag()
+        
+        if self.audit_type == "links" or self.audit_type == "all":
+            print("\n--- Running Broken Links Check ---")
+            await self.check_broken_links()
         
         if self.audit_type == "compare":
             print("\n--- Compare mode requires two URLs ---")
@@ -643,8 +730,8 @@ class UniversalAnalyzerV2:
         # Step 1: Capture screenshot and extract text in one pass
         await self.capture_screenshot_and_text()
         
-        # Step 2: Run audit
-        self.run_audit()
+        # Step 2: Run audit (some checks are async)
+        await self.run_audit()
         
         # Step 3: Generate report
         report = self.generate_report()
@@ -675,6 +762,7 @@ def main():
         print("  - r3: R3 Review (Regional) - Sections 11-15")
         print("  - compare: Compare two pages (use compare_pages.py)")
         print("  - accessibility: WCAG and EAA accessibility checks")
+        print("  - links: Check for broken links")
         print("  - all: Run all audit types")
         print("\nRegions: US, UK, IE, AU, NZ, MY, SG, IN, HK, PH, PK, TH, VN, ID, FR, DE, IT, ES, NL, BE, AT, CH, NO, DK, SE, JP, KR, CN, TW, CA")
         print("\nExamples:")
