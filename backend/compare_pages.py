@@ -5,9 +5,17 @@ import json
 from pathlib import Path
 from playwright.async_api import async_playwright
 
-URLS = [
-    "https://www.dell.com/en-us/shop/laptop-computers/spd/xps13dx13260#configure-anchor",
-]
+import sys
+
+# Get URLs from command line or use defaults
+if len(sys.argv) >= 3:
+    URLS = [sys.argv[1], sys.argv[2]]
+else:
+    URLS = [
+        "https://www.dell.com/en-ca/shop/laptop-computers/spd/dell14sds14270",
+        "https://www.dell.com/en-us/shop/laptop-computers/spd/dell14sds14270",
+    ]
+
 SCRIPT_DIR = Path(__file__).parent
 
 
