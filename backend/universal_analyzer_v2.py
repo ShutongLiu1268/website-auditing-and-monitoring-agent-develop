@@ -25,11 +25,9 @@ Example:
 import asyncio
 import sys
 import re
-import aiohttp
 from pathlib import Path
 from playwright.async_api import async_playwright
 from datetime import datetime
-from urllib.parse import urljoin, urlparse
 
 SCRIPT_DIR = Path(__file__).parent
 SCREENSHOTS_DIR = SCRIPT_DIR / "screenshots"
@@ -549,6 +547,14 @@ class UniversalAnalyzerV2:
         print("BROKEN LINKS CHECK")
         print("="*60)
         
+        try:
+            import aiohttp
+            from urllib.parse import urljoin
+        except ImportError:
+            print("aiohttp not installed - skipping broken link check")
+            print("Install with: pip install aiohttp")
+            return
+        
         issues = []
         
         # Extract links from the page using Playwright
@@ -680,16 +686,15 @@ class UniversalAnalyzerV2:
 
 ## Analysis Results Table
 
-|| Original Problem | Severity | Issue | Suggested Fix | Original Link |
-||------------------|----------|-------|---------------|---------------|
+|| Section | The Problem | Suggested Correction | What to copy/paste into proof | Severity | Explanation |
+||---------|------|-------------|---------------------|--------------------------------|----------|-------------|
 """
         
         if not self.results:
-            report += "| No issues found | N/A | N/A | N/A | N/A |\n"
+            report += "| No issues found | N/A | N/A | N/A | N/A | N/A |\n"
         else:
             for result in self.results:
-                link = result['copy_paste'] if result.get('copy_paste', '').startswith('http') else self.url
-                report += f"| {result['issue']} | {result['severity']} | {result['section']} | {result['correction']} | {link} |\n"
+                report += f"| {result['section']} | {result['issue']} | {result['correction']} | {result['copy_paste']} | {result['severity']} | {result['explanation']} |\n"
         
         # Add summary
         report += "\n---\n\n## Summary\n\n"
