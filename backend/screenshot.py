@@ -5,7 +5,7 @@ from pathlib import Path
 from playwright.async_api import async_playwright
 
 URLS = [
-    "https://www.dell.com/en-us/shop/laptop-computers/spd/xps13dx13260#configure-anchor",
+    "https://www.dell.com/en-ca/shop/laptop-computers/spd/dell15laptopdc15250",
 ]
 SCRIPT_DIR = Path(__file__).parent
 
@@ -93,7 +93,7 @@ async def capture_page(page, url, index, total):
 
     # Generate filename based on URL
     locale = "ca" if "en-ca" in url else "us"
-    screenshot_path = SCRIPT_DIR / f"xps13_{locale}.png"
+    screenshot_path = SCRIPT_DIR / f"dell15laptop_{locale}.png"
 
     print("7. Taking full-page screenshot...")
     await page.screenshot(path=str(screenshot_path), full_page=True, timeout=120000)
