@@ -24,6 +24,21 @@ from datetime import datetime
 SCRIPT_DIR = Path(__file__).parent
 
 
+def analyze_screenshot_text(screenshot_path):
+    """Analyze screenshot for visible text issues (simulated)."""
+    # In a real implementation, this would use OCR to read text from the screenshot
+    # For now, we'll note that screenshot analysis is performed
+    return {
+        'section': 'Screenshot Analysis',
+        'line': 'N/A',
+        'issue': 'Screenshot captured for visual verification',
+        'correction': 'Review screenshot manually for visual issues',
+        'copy_paste': 'N/A',
+        'severity': 'N/A',
+        'explanation': 'Screenshot saved for manual visual review'
+    }
+
+
 class UniversalAnalyzer:
     def __init__(self, url, checks=None):
         self.url = url
@@ -378,14 +393,25 @@ class UniversalAnalyzer:
 def main():
     """Main entry point."""
     if len(sys.argv) < 2:
-        print("Usage: python universal_analyzer.py <URL> [--checks <check1,check2,...>]")
+        print("="*60)
+        print("UNIVERSAL PAGE ANALYZER")
+        print("="*60)
+        print("\nUsage: python universal_analyzer.py <URL> [--checks <check1,check2,...>]")
         print("\nAvailable checks:")
         print("  - grammar: Check for grammar errors")
         print("  - spelling: Check spelling (UK vs US)")
         print("  - trademarks: Check trademark symbols")
         print("  - superlatives: Check superlative claims")
-        print("\nExample:")
-        print("  python universal_analyzer.py https://www.dell.com/en-gb --checks grammar,spelling,trademarks")
+        print("  - all: Run all checks")
+        print("\nExamples:")
+        print("  python universal_analyzer.py https://www.dell.com/en-gb")
+        print("  python universal_analyzer.py https://www.dell.com/en-gb --checks grammar,spelling")
+        print("  python universal_analyzer.py https://www.dell.com/en-gb --checks all")
+        print("\nWhat the tool does:")
+        print("  1. Takes a full-page screenshot")
+        print("  2. Extracts all text content")
+        print("  3. Runs requested checks")
+        print("  4. Outputs results in table format")
         sys.exit(1)
     
     url = sys.argv[1]
@@ -394,7 +420,19 @@ def main():
     if "--checks" in sys.argv:
         check_index = sys.argv.index("--checks")
         if check_index + 1 < len(sys.argv):
-            checks = sys.argv[check_index + 1].split(",")
+            checks_input = sys.argv[check_index + 1]
+            if checks_input.lower() == "all":
+                checks = ["grammar", "spelling", "trademarks", "superlatives"]
+            else:
+                checks = checks_input.split(",")
+    
+    print("\n" + "="*60)
+    print("UNIVERSAL PAGE ANALYZER")
+    print("="*60)
+    print(f"\nConfiguration:")
+    print(f"  URL: {url}")
+    print(f"  Checks: {', '.join(checks)}")
+    print(f"\nStarting analysis...")
     
     analyzer = UniversalAnalyzer(url, checks)
     asyncio.run(analyzer.run())
