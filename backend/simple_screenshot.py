@@ -25,7 +25,31 @@ async def capture_screenshot(url, output_filename):
         print("2. Waiting for page to render (15 seconds)...")
         await asyncio.sleep(15)
         
-        print("3. Dismissing cookie banners...")
+        print("3. Handling geo-location prompt...")
+        # Handle Dell geo-location prompt - works for any region
+        geo_selectors = [
+            'button:has-text("Stay on")',
+            'a:has-text("Stay on")',
+            'button:has-text("Continue to")',
+            'a:has-text("Continue to")',
+            '[data-testid*="stay"]',
+            '[data-testid*="continue"]',
+        ]
+        
+        for selector in geo_selectors:
+            try:
+                element = page.locator(selector).first
+                if await element.is_visible(timeout=3000):
+                    await element.click()
+                    print(f"   Clicked: {selector}")
+                    await asyncio.sleep(3)
+                    break
+            except:
+                continue
+        
+        print("   Geo-location handling complete")
+        
+        print("4. Dismissing cookie banners...")
         cookie_selectors = [
             'button:has-text("Accept")',
             'button:has-text("Accept All")',
@@ -51,8 +75,8 @@ async def capture_screenshot(url, output_filename):
         
         print("   Cookie banner handling complete")
         
-        print("4. Expanding all accordion/toggle sections...")
-        # Try to expand common accordion/toggle elements
+        print("5. Expanding all accordion/toggle sections (excluding navigation)...")
+        # Try to expand common accordion/toggle elements, but skip navigation
         accordion_selectors = [
             'button[aria-expanded="false"]',
             '.accordion-button:not(.collapsed)',
@@ -68,12 +92,42 @@ async def capture_screenshot(url, output_filename):
             'button:has-text("+")',
         ]
         
+        # Navigation selectors to avoid
+        nav_selectors = [
+            'nav',
+            '.navigation',
+            '.nav-menu',
+            '.header-nav',
+            '.mega-menu',
+            '[role="navigation"]',
+            '.site-header',
+            'header',
+            '.top-nav',
+            '.main-nav',
+            '.primary-nav',
+            '.dell-header',
+            '.global-nav',
+        ]
+        
         for selector in accordion_selectors:
             try:
                 elements = await page.locator(selector).all()
                 for element in elements:
                     try:
-                        if await element.is_visible(timeout=1000):
+                        # Check if element is inside navigation
+                        is_in_nav = False
+                        for nav_selector in nav_selectors:
+                            try:
+                                nav_element = page.locator(nav_selector).first
+                                if await nav_element.is_visible(timeout=500):
+                                    # Check if accordion element is inside this nav
+                                    is_in_nav = await element.evaluate("el => !!el.closest('nav, .navigation, .header, [role=\"navigation\"]')")
+                                    if is_in_nav:
+                                        break
+                            except:
+                                continue
+                        
+                        if not is_in_nav and await element.is_visible(timeout=1000):
                             await element.click()
                             await asyncio.sleep(0.5)
                     except:
@@ -81,9 +135,9 @@ async def capture_screenshot(url, output_filename):
             except:
                 continue
         
-        print("   Accordion expansion complete")
+        print("   Accordion expansion complete (navigation skipped)")
         
-        print("5. Clicking through image gallery...")
+        print("6. Clicking through image gallery...")
         # Try to click through image gallery arrows/dots
         gallery_selectors = [
             '.gallery-arrow',
@@ -112,8 +166,8 @@ async def capture_screenshot(url, output_filename):
         
         print("   Image gallery cycling complete")
         
-        print("6. Clicking through all tabs...")
-        # Try to click through tab navigation
+        print("7. Clicking through all tabs (excluding navigation)...")
+        # Try to click through tab navigation, but skip navigation tabs
         tab_selectors = [
             '.tab-button',
             '.tab-link',
@@ -122,12 +176,32 @@ async def capture_screenshot(url, output_filename):
             '.tab-item',
         ]
         
+        # Navigation selectors to avoid
+        nav_selectors = [
+            'nav',
+            '.navigation',
+            '.nav-menu',
+            '.header-nav',
+            '.mega-menu',
+            '[role="navigation"]',
+            '.site-header',
+            'header',
+            '.top-nav',
+            '.main-nav',
+            '.primary-nav',
+            '.dell-header',
+            '.global-nav',
+        ]
+        
         for selector in tab_selectors:
             try:
                 elements = await page.locator(selector).all()
                 for element in elements:
                     try:
-                        if await element.is_visible(timeout=1000):
+                        # Check if element is inside navigation
+                        is_in_nav = await element.evaluate("el => !!el.closest('nav, .navigation, .header, [role=\"navigation\"]')")
+                        
+                        if not is_in_nav and await element.is_visible(timeout=1000):
                             await element.click()
                             await asyncio.sleep(1)
                     except:
@@ -135,18 +209,97 @@ async def capture_screenshot(url, output_filename):
             except:
                 continue
         
-        print("   Tab cycling complete")
+        print("   Tab cycling complete (navigation skipped)")
         
-        print("7. Scrolling to load all content...")
-        # Scroll more slowly with longer waits to ensure all content loads
+        print("8. Hiding navigation elements before capturing...")
+        # Hide navigation menus and header elements
+        await page.evaluate("""
+            () => {
+                const selectors = [
+                    'nav',
+                    '.navigation',
+                    '.nav-menu',
+                    '.header-nav',
+                    '.mega-menu',
+                    '[role="navigation"]',
+                    '.site-header',
+                    'header',
+                    '.top-nav',
+                    '.main-nav',
+                    '.primary-nav',
+                    '.dell-header',
+                    '.global-nav',
+                    '.basket-nav',
+                    '.cart-nav',
+                    '.utility-nav',
+                    '.menu-container',
+                    '.dropdown-menu',
+                    '.flyout-menu',
+                ];
+                
+                selectors.forEach(selector => {
+                    const elements = document.querySelectorAll(selector);
+                    elements.forEach(el => {
+                        el.style.display = 'none';
+                        el.style.visibility = 'hidden';
+                    });
+                });
+                
+                return true;
+            }
+        """)
+        print("   Navigation elements hidden")
+        
+        print("9. Finding product content area and starting scroll position...")
+        # Try to find the main product content section
+        product_selectors = [
+            'main',
+            '.main-content',
+            '[role="main"]',
+            '.product-page',
+            '.pdp-content',
+            '#product-content',
+            '.product-detail',
+            '.product-showcase',
+        ]
+        
+        product_element = None
+        for selector in product_selectors:
+            try:
+                element = page.locator(selector).first
+                if await element.is_visible(timeout=2000):
+                    product_element = element
+                    print(f"   Found product content: {selector}")
+                    break
+            except:
+                continue
+        
+        if not product_element:
+            print("   Could not find specific product content, using full page")
+            product_element = page.locator('body')
+        
+        # Try to get the starting position (below navigation)
+        start_position = 0
+        try:
+            product_bounds = await product_element.bounding_box()
+            if product_bounds and product_bounds['y'] > 200:
+                start_position = product_bounds['y'] - 100
+                print(f"   Starting scroll from y={start_position} (below navigation)")
+            else:
+                print("   Starting scroll from top")
+        except:
+            print("   Starting scroll from top")
+        
+        print("10. Scrolling to load all product content...")
+        # Scroll only within the product content area
         scroll_count = 0
-        max_scrolls = 150  # Increased to 150
-        scroll_step = 500  # Smaller steps for more thorough scrolling
-        scroll_position = 0
+        max_scrolls = 40
+        scroll_step = 500
+        scroll_position = start_position
         
         while scroll_count < max_scrolls:
             await page.evaluate(f"window.scrollTo(0, {scroll_position})")
-            await asyncio.sleep(1.5)  # Longer wait (1.5 seconds)
+            await asyncio.sleep(1.5)
             scroll_position += scroll_step
             scroll_count += 1
             
@@ -154,11 +307,10 @@ async def capture_screenshot(url, output_filename):
             current_scroll = await page.evaluate("window.pageYOffset")
             max_scroll = await page.evaluate("document.body.scrollHeight - window.innerHeight")
             
-            # If we've reached the bottom, continue scrolling a bit more to be sure
+            # If we've reached the bottom, continue scrolling a bit more
             if current_scroll >= max_scroll - 100:
                 print(f"   Reached bottom, doing extra scrolls to ensure all content loaded")
-                # Do 15 more scrolls to be absolutely sure
-                for i in range(15):
+                for i in range(8):
                     await page.evaluate(f"window.scrollTo(0, {scroll_position})")
                     await asyncio.sleep(1.5)
                     scroll_position += scroll_step
@@ -166,11 +318,11 @@ async def capture_screenshot(url, output_filename):
         
         print(f"   Scrolled {scroll_count} times")
         
-        print("8. Scrolling back to top...")
+        print("10. Scrolling back to top...")
         await page.evaluate("window.scrollTo(0, 0)")
         await asyncio.sleep(3)
         
-        print("9. Getting actual content height...")
+        print("11. Getting actual content height...")
         content_height = await page.evaluate("""
             () => {
                 const body = document.body;
@@ -194,7 +346,7 @@ async def capture_screenshot(url, output_filename):
         """)
         print(f"   Content height: {content_height}px")
         
-        print("10. Taking full-page screenshot...")
+        print("12. Taking full-page screenshot...")
         output_path = SCRIPT_DIR / output_filename
         
         # Take full-page screenshot

@@ -27,15 +27,23 @@ Do not run any audit until the user has told you which checkpoint/framework they
 
 ## Audit Process Requirements
 
+**Screenshot Strategy:**
+- Default: Use `fast_screenshot.py` for all audits
+- If user requests "thorough audit" or "detailed audit": Use `simple_screenshot.py`
+- If user requests "quick audit": Use `fast_screenshot.py` (same as default)
+
 When performing any URL audit (Sprint/Launch, R2, R3, Accessibility, or Page Comparison), always follow this process:
 
 1. **Open the URL** - Use browser_preview to open the target URL in a browser session (if available)
 2. **Take screenshots** - Capture visual screenshots of the page to review visual elements, layout, and imagery
-   - **Preferred method: Use Playwright via simple_screenshot.py**
+   - **Default method: Use Playwright via fast_screenshot.py** (~20 seconds)
      - Install Playwright if not available: `python -m pip install playwright`
      - Install Chromium browser: `python -m playwright install chromium`
-     - Run screenshot: `cd backend && python simple_screenshot.py "<URL>" <output_filename>.png`
-     - Example: `python simple_screenshot.py "https://www.dell.com/en-ca/shop/laptop-computers/spd/dell15laptopdc15250" dell15laptop_ca.png`
+     - Run screenshot: `cd backend && python fast_screenshot.py "<URL>" <output_filename>.png`
+     - Example: `python fast_screenshot.py "https://www.dell.com/en-ca/shop/laptop-computers/spd/dell15laptopdc15250" dell15laptop_ca.png`
+   - **Thorough method: Use simple_screenshot.py for detailed audits** (~60+ seconds)
+     - Use this when user requests "thorough audit" or "detailed audit"
+     - Run: `cd backend && python simple_screenshot.py "<URL>" <output_filename>.png`
    - **Alternative method: Use screenshot.py for multiple URLs**
      - Edit the URLS list in `backend/screenshot.py` to add your target URLs
      - Run: `cd backend && python screenshot.py`
@@ -56,12 +64,26 @@ When performing any URL audit (Sprint/Launch, R2, R3, Accessibility, or Page Com
 **Important:** Both visual (screenshot) and text-based analysis must be performed for a complete audit. Do not rely solely on webfetch text content.
 
 **Screenshot Method Details:**
-- The `simple_screenshot.py` script uses Playwright to launch a headless Chromium browser
-- It navigates to the URL, waits for page rendering, dismisses cookie banners
-- It scrolls through the page to trigger lazy loading of all content
-- It takes a full-page screenshot and saves it to the backend directory
-- The script handles common cookie banner selectors automatically
+
+**fast_screenshot.py (default):**
+- Uses Playwright to launch a headless Chromium browser
+- Navigates to the URL, waits 5 seconds for page rendering, dismisses cookie banners
+- Scrolls 10 times to trigger lazy loading of most content
+- Takes a full-page screenshot and saves it to the backend directory
+- Handles common cookie banner selectors automatically
 - Use the screenshot file path to read the image with the `read` tool for visual analysis
+- Time: ~20 seconds per page
+
+**simple_screenshot.py (thorough/detailed audits):**
+- Uses Playwright to launch a headless Chromium browser
+- Navigates to the URL, waits 15 seconds for page rendering, dismisses cookie banners
+- Expands all accordion/toggle sections (excluding navigation)
+- Clicks through image gallery and tabs to load all content
+- Scrolls 40+ times to trigger lazy loading of all content
+- Takes a full-page screenshot and saves it to the backend directory
+- Handles common cookie banner selectors automatically
+- Use the screenshot file path to read the image with the `read` tool for visual analysis
+- Time: ~60+ seconds per page
 
 **Sprint/Launch Audit Checkpoints:** If the user selects Sprint/Launch audit, always check the following:
 - Accuracy, consistency, and compliance with Dell style and language rules
